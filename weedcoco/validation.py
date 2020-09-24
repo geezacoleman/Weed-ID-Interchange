@@ -109,24 +109,10 @@ def validate_coordinates(weedcoco):
                     f"(w={width}, h={height}) "
                     f"and have non-zero area."
                 )
-        if "segmentation" in annotation:
-            if not hasattr(annotation["segmentation"], "items"):
-                # polygons
-                for polygon in annotation["segmentation"]:
-                    if len(polygon) % 2 == 1:
-                        raise ValidationError(
-                            "Polygons must have an even number of elements"
-                        )
-
-                is_x = True
-                for val in polygon:
-                    if val >= (width if is_x else height):
-                        raise ValidationError(
-                            f"Polygon coordinate out of bounds: "
-                            f"{val} >= {'width' if is_x else 'height'}="
-                            f"{width if is_x else height}"
-                        )
-        else:  # RLE
+        if "segmentation" in annotation and hasattr(
+            annotation["segmentation"], "items"
+        ):
+            # RLE
             if annotation["segmentation"]["size"] != [width, height]:
                 raise ValidationError(
                     f"Segmentation size {annotation['segmentation']['size']}"
@@ -142,6 +128,22 @@ def validate_coordinates(weedcoco):
                         f"RLE-based segmentation is bigger "
                         f"than image of size {[width, height]}. "
                         f"Got counts summing to {n_pixels}"
+                    )
+        elif "segmentation" in annotation:
+            # polygons
+            for polygon in annotation["segmentation"]:
+                if len(polygon) % 2 == 1:
+                    raise ValidationError(
+                        "Polygons must have an even number of elements"
+                    )
+
+            is_x = True
+            for val in polygon:
+                if val >= (width if is_x else height):
+                    raise ValidationError(
+                        f"Polygon coordinate out of bounds: "
+                        f"{val} >= {'width' if is_x else 'height'}="
+                        f"{width if is_x else height}"
                     )
 
         # TODO: check area within tolerance
